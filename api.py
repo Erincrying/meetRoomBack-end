@@ -6,6 +6,8 @@ import flask,json,pymysql
 import pandas as pd
 
 import pymysql.cursors
+
+from django.core.paginator import Paginator
  
 # flask 一个服务
 server=flask.Flask(__name__)
@@ -143,7 +145,7 @@ def getUserInfo():
         'code': 200,
         'data': {
           'code': '0000',
-          'msg': '获取用户信息成功',
+          'message': '获取用户信息成功',
           'data': {
             'user': userInfo[0]
           }
@@ -152,11 +154,77 @@ def getUserInfo():
     else:
       res = {
         'code': '9999',
-        'msg': '获取用户信息失败',
+        'message': '获取用户信息失败',
         'data': {}
       }
 
     return json.dumps(res, ensure_ascii=False)
 
+
+# 会议室可预约列表查询
+@server.route('/meetingRoom/list', methods=['post'])
+def meetingRoomList():
+    # 获取接口传入的参数的值
+    # content = flask.request.json
+    # print(content, 'content') # {'meetingRoomName': '', 'meetingRoomBuildingNum': '00', 'state': '00', 'orderTime': '2022-05-20', 'size': 10, 'page': 1}
+    meetingRoomName = flask.request.json.get('meetingRoomName')
+    meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
+    state = flask.request.json.get('state')
+    orderTime = flask.request.json.get('orderTime')
+    size = flask.request.json.get('size')
+    page = flask.request.json.get('page')
+
+    
+
+    # sqlList语句
+    # sqlList = "select * from meetingroomdb"
+    sqlList = "select * from meetingroomdb where meetingRoomName like" + "'%" + str(meetingRoomName) + "%'" # 模糊查询meetingRoomName
+    # sqlList = sqlList + "and meetingRoomBuildingNum=" + "'" + str(meetingRoomBuildingNum) + "'" + "and state=" + "'" + str(state) + "'"
+    # 条件查询
+    if state != '': # 状态不是是全部
+      sqlList = sqlList + "and state=" + "'" + str(state) + "'"
+    if meetingRoomBuildingNum != '00': # meetingRoomBuildingNum不是全部
+      sqlList = sqlList + "and meetingRoomBuildingNum=" + "'" + str(meetingRoomBuildingNum) + "'"
+
+    print(sqlList, 'sqlList')
+    # 数据库的值
+    meetingRoomList = MsqldbObject(sqlList)
+    # print(meetingRoomList, 'meetingRoomList')
+    # print(len(meetingRoomList), 'meetingRoomList')
+    # paginator.count：返回所有记录的总数量
+    # paginator.num_pages：返回分页后的总页数
+    # paginator.page_range：返回分页后的页码范围，一个range对象
+    paginator = Paginator(meetingRoomList, size)
+    current_page_num = int(page)
+    page_obj = paginator.page(current_page_num)
+    currentList = page_obj.object_list
+    # print(currentList, 'currentList')
+    # print(type(currentList), 'type') # list
+
+    if len(meetingRoomList) >= 0: # 查到了信息
+      res = {
+        'code': 200,
+        'data': {
+          'code': '0000',
+          'message': 'success',
+          'data': {
+            'page': page,
+            'size': size,
+            'list': currentList,
+            'total': paginator.count,
+            'totalPages': paginator.num_pages
+          }
+        }
+      }
+    else:
+      res = {
+        'code': '9999',
+        'message': '获取会议室列表失败',
+        'data': {
+          'list': [],
+        }
+      }
+
+    return json.dumps(res, ensure_ascii=False)
 # 本地服务端口号
 server.run(port=9090,debug=True,host='localhost')
