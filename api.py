@@ -196,6 +196,35 @@ def meetingRoomList():
     size = flask.request.json.get('size')
     page = flask.request.json.get('page')
 
+    # 判断预约的这个会议室，是否一天中的三个时间段都被预约，更新state
+    # 先获取原始的会议室列表
+    sqlOriginalList = "select * from meetingroomdb"
+    originalList = MsqldbObject(sqlOriginalList)
+    # 拿到所有数据的meetingRoomId
+    meetingRoomIdList= []
+    for item in originalList:
+      # print(item, 'item') # {'meetingRoomId': 23, 'meetingRoomName': '506', 'meetingRoomBuildingNum': '01', 'meetingRoomBuildingName': '行政楼', 'state': '00'} item
+      # #获取key值,value值
+      for key, value in item.items():
+        # print(key, value)
+        if key == 'meetingRoomId':
+          meetingRoomIdList.append(value)
+          break
+    # print(meetingRoomIdList, 'meetingRoomIdList') # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    for roomId in meetingRoomIdList:
+      # 当前房间id对应在orderlist，在当前日期下的预约记录数目
+      sqlOrderRoom = "select * from orderlist where meetingRoomId=" + "'" + str(roomId) + "'" + "and orderTime=" + "'" + str(orderTime) + "'" 
+      roomOrderList = MsqldbObject(sqlOrderRoom)
+      # print(len(roomOrderList), 'roomOrderList')
+      if len(roomOrderList) == 3: # 当前房间在当前日期下预约了三次
+        # 更新对应state
+        sqlUpdate = "update meetingroomdb set state='01' where meetingRoomId=" + "'" + str(roomId) + "'"
+      else:
+        sqlUpdate = "update meetingroomdb set state='00' where meetingRoomId=" + "'" + str(roomId) + "'"
+      updateRes = MsqldbObject(sqlUpdate)
+      # print(updateRes, 'updateRes')
+
+    # 正常条件查询
     # sqlList语句
     # sqlList = "select * from meetingroomdb"
     sqlList = "select * from meetingroomdb where meetingRoomName like" + "'%" + str(meetingRoomName) + "%'" # 模糊查询meetingRoomName
