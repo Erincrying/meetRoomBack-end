@@ -325,10 +325,11 @@ def orderRoom():
 @server.route('/meetingRoom/orderlist', methods=['post'])
 def orderlist():
     content = flask.request.json
-    print(content, 'content') # {'meetingRoomName': '', 'meetingRoomBuildingNum': '00', 'state': '00', 'orderTime': '2022-05-20', 'size': 10, 'page': 1}
+    print(content, 'content') # {'meetingRoomName': '', 'meetingRoomBuildingNum': '00', 'orderTime': '2022-05-21', 'size': 10, 'page': 1, 'operator': '李琳'}
     meetingRoomName = flask.request.json.get('meetingRoomName')
     meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
     orderTime = flask.request.json.get('orderTime')
+    operator =  flask.request.json.get('operator')
     size = flask.request.json.get('size')
     page = flask.request.json.get('page')
 
@@ -341,8 +342,10 @@ def orderlist():
       sqlList = sqlList + "and meetingRoomBuildingNum=" + "'" + str(meetingRoomBuildingNum) + "'"
     if orderTime: # 选择了具体时间
       sqlList = sqlList + "and orderTime=" + "'" + str(orderTime) + "'" # 预约时间查询
+    # 对操作人的过滤
+    sqlList = sqlList + "and operator=" + "'" + str(operator) + "'"
 
-    print(sqlList, 'sqlList')
+    # print(sqlList, 'sqlList')
     # 数据库的值
     meetingRoomList = MsqldbObject(sqlList)
     # print(meetingRoomList, 'meetingRoomList')
