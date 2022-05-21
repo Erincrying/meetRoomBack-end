@@ -255,12 +255,12 @@ def orderRoom():
     content = flask.request.json
     # print(content, 'content') #{'meetingRoomId': 1, 'meetingRoomName': '202', 'meetingRoomBuildingNum': '08', 'meetingRoomBuildingName': '8号教学楼', 'state': '00', 'operator': '李琳', 'orderTime': '2022-05-20', 'orderConcreteTime': '03'}
     meetingRoomId = flask.request.json.get('meetingRoomId')
-    meetingRoomName = flask.request.json.get('meetingRoomName')
-    meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
-    meetingRoomBuildingName = flask.request.json.get('meetingRoomBuildingName')
+    # meetingRoomName = flask.request.json.get('meetingRoomName')
+    # meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
+    # meetingRoomBuildingName = flask.request.json.get('meetingRoomBuildingName')
     orderTime = flask.request.json.get('orderTime')
     orderConcreteTime = flask.request.json.get('orderConcreteTime')
-    operator = flask.request.json.get('operator')
+    # operator = flask.request.json.get('operator')
     # 重复时间预约会议室判断
     sqlOrderedRoom = "select orderConcreteTime from orderlist where meetingRoomId=" + "'" + str(meetingRoomId) + "'" + "and orderTime=" + "'" + str(orderTime) + "'" + "and orderConcreteTime=" + "'" + str(orderConcreteTime) + "'"
     orderedRoomList = MsqldbObject(sqlOrderedRoom)
@@ -351,6 +351,36 @@ def orderlist():
         }
       }
     return json.dumps(res, ensure_ascii=False)
+
+
+# 取消预约会议室接口
+@server.route('/meetingRoom/cancelOrderRoom', methods=['post'])
+def cancelOrderRoom():
+    # 获取接口传入的参数的值
+    content = flask.request.json
+    print(content, 'content') # {'orderId': 5, 'meetingRoomName': '202', 'meetingRoomBuildingNum': '08', 'meetingRoomBuildingName': '8号教学楼', 'orderTime': '2022-05-21', 'orderConcreteTime': '03', 'meetingRoomId': 1, 'operator': '李琳', 'canCancelOrderFlag': True
+    orderId = flask.request.json.get('orderId')
+    
+    sqlDelete = "delete from orderlist where orderId=" + "'" + str(orderId) + "'"
+    deleteRes = MsqldbObject(sqlDelete)
+    print(deleteRes, 'deleteRes')
+    if deleteRes == 'OK':
+      res = {
+        'code': 200,
+        'data': {
+          'code': '0000',
+          'message': 'success',
+          'data': {}
+        }
+      }
+    else:
+      res = {
+        'code': '9999',
+        'message': '取消预约失败！',
+        'data': {}
+      }
+    return json.dumps(res, ensure_ascii=False)
+
 
 
 # 本地服务端口号
