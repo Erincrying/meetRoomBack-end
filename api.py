@@ -29,7 +29,7 @@ def Msqldb(sql):
  
  # 本地数据库方法,返回字典(cursorclass=pymysql.cursors.DictCursor)
 def MsqldbObject(sql):
-    db = pymysql.connect(host = 'localhost', port = 3306, user = 'root', passwd = 'll961113', db='lilin',cursorclass=pymysql.cursors.DictCursor, charset = 'utf8')
+    db = pymysql.connect(host = 'localhost', port = 3306, user = 'root', passwd = 'll961113', db='lilin', cursorclass=pymysql.cursors.DictCursor, charset = 'utf8')
     cur = db.cursor()
     cur.execute(sql)
     # 判断sql语句是否select开头
@@ -43,6 +43,28 @@ def MsqldbObject(sql):
     cur.close()
     db.close()
     return res
+
+# 本地数据库插入方法
+def insertData(data, table): # data为对应的字典
+  db = pymysql.connect(host = 'localhost', port = 3306, user = 'root', passwd = 'll961113', db='lilin', cursorclass=pymysql.cursors.DictCursor, charset = 'utf8')
+  cur = db.cursor()
+  # 根据数据库自动配对键值对
+  table = table
+  keys = ', '.join(data.keys())
+  values = ', '.join(['%s'] * len(data))
+  sql = 'INSERT INTO {table}({keys}) VALUES ({values})'.format(table=table, keys=keys, values=values)
+  try:
+    cur.execute(sql, tuple(data.values()))
+    # print('Successful')
+    res = 'Successful'
+    db.commit()
+  except:
+    # print('Failed')
+    db.rollback()
+    res = 'Failed'
+  cur.close()
+  return res
+
 # # 注册接口
 # @server.route('/register',methods=['get','post'])
 # def sigin():
@@ -161,7 +183,7 @@ def getUserInfo():
     return json.dumps(res, ensure_ascii=False)
 
 
-# 会议室可预约列表查询
+# 会议室列表查询
 @server.route('/meetingRoom/list', methods=['post'])
 def meetingRoomList():
     # 获取接口传入的参数的值
@@ -173,8 +195,6 @@ def meetingRoomList():
     orderTime = flask.request.json.get('orderTime')
     size = flask.request.json.get('size')
     page = flask.request.json.get('page')
-
-    
 
     # sqlList语句
     # sqlList = "select * from meetingroomdb"
@@ -226,5 +246,40 @@ def meetingRoomList():
       }
 
     return json.dumps(res, ensure_ascii=False)
+
+
+# 预约会议室接口
+@server.route('/meetingRoom/orderRoom', methods=['post'])
+def orderRoom():
+    # 获取接口传入的参数的值
+    content = flask.request.json
+    # print(content, 'content') #{'meetingRoomId': 1, 'meetingRoomName': '202', 'meetingRoomBuildingNum': '08', 'meetingRoomBuildingName': '8号教学楼', 'state': '00', 'operator': '李琳', 'orderTime': '2022-05-20', 'orderConcreteTime': '03'}
+    # meetingRoomId = flask.request.json.get('meetingRoomId')
+    # meetingRoomName = flask.request.json.get('meetingRoomName')
+    # meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
+    # meetingRoomBuildingName = flask.request.json.get('meetingRoomBuildingName')
+    # orderTime = flask.request.json.get('orderTime')
+    # orderConcreteTime = flask.request.json.get('orderConcreteTime')
+    # operator = flask.request.json.get('operator')
+
+    content.pop('state') # 去除字典重复元素
+    insertRes = insertData(content, 'orderlist') #INSERT INTO orderlist(meetingRoomId, meetingRoomName, meetingRoomBuildingNum, meetingRoomBuildingName, operator, orderTime, orderConcreteTime) VALUES (%s, %s, %s, %s, %s, %s, %s) sql 
+    if insertRes == 'Successful': # 插入成功
+      res = {
+        'code': 200,
+        'data': {
+          'code': '0000',
+          'message': 'success',
+          'data': {}
+        }
+      }
+    else:
+      res = {
+        'code': '9999',
+        'message': '会议室预约失败！',
+        'data': {}
+      }
+    return json.dumps(res, ensure_ascii=False)
+
 # 本地服务端口号
 server.run(port=9090,debug=True,host='localhost')
