@@ -254,31 +254,41 @@ def orderRoom():
     # 获取接口传入的参数的值
     content = flask.request.json
     # print(content, 'content') #{'meetingRoomId': 1, 'meetingRoomName': '202', 'meetingRoomBuildingNum': '08', 'meetingRoomBuildingName': '8号教学楼', 'state': '00', 'operator': '李琳', 'orderTime': '2022-05-20', 'orderConcreteTime': '03'}
-    # meetingRoomId = flask.request.json.get('meetingRoomId')
-    # meetingRoomName = flask.request.json.get('meetingRoomName')
-    # meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
-    # meetingRoomBuildingName = flask.request.json.get('meetingRoomBuildingName')
-    # orderTime = flask.request.json.get('orderTime')
-    # orderConcreteTime = flask.request.json.get('orderConcreteTime')
-    # operator = flask.request.json.get('operator')
-
-    content.pop('state') # 去除字典重复元素
-    insertRes = insertData(content, 'orderlist') #INSERT INTO orderlist(meetingRoomId, meetingRoomName, meetingRoomBuildingNum, meetingRoomBuildingName, operator, orderTime, orderConcreteTime) VALUES (%s, %s, %s, %s, %s, %s, %s) sql 
-    if insertRes == 'Successful': # 插入成功
-      res = {
-        'code': 200,
-        'data': {
-          'code': '0000',
-          'message': 'success',
-          'data': {}
-        }
-      }
-    else:
+    meetingRoomId = flask.request.json.get('meetingRoomId')
+    meetingRoomName = flask.request.json.get('meetingRoomName')
+    meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
+    meetingRoomBuildingName = flask.request.json.get('meetingRoomBuildingName')
+    orderTime = flask.request.json.get('orderTime')
+    orderConcreteTime = flask.request.json.get('orderConcreteTime')
+    operator = flask.request.json.get('operator')
+    # 重复时间预约会议室判断
+    sqlOrderedRoom = "select orderConcreteTime from orderlist where meetingRoomId=" + "'" + str(meetingRoomId) + "'" + "and orderTime=" + "'" + str(orderTime) + "'" + "and orderConcreteTime=" + "'" + str(orderConcreteTime) + "'"
+    orderedRoomList = MsqldbObject(sqlOrderedRoom)
+    # print(len(orderedRoomList), 'len(orderedRoomList)')
+    if (len(orderedRoomList)): # 这个时间段的会议室已经被预约
       res = {
         'code': '9999',
-        'message': '会议室预约失败！',
+        'message': '您选择的时间段已经被预约过了！',
         'data': {}
       }
+    else:
+      content.pop('state') # 去除字典重复元素
+      insertRes = insertData(content, 'orderlist') #INSERT INTO orderlist(meetingRoomId, meetingRoomName, meetingRoomBuildingNum, meetingRoomBuildingName, operator, orderTime, orderConcreteTime) VALUES (%s, %s, %s, %s, %s, %s, %s) sql 
+      if insertRes == 'Successful': # 插入成功
+        res = {
+          'code': 200,
+          'data': {
+            'code': '0000',
+            'message': 'success',
+            'data': {}
+          }
+        }
+      else:
+        res = {
+          'code': '9999',
+          'message': '会议室预约失败！',
+          'data': {}
+        }
     return json.dumps(res, ensure_ascii=False)
 
 # 本地服务端口号
