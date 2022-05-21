@@ -291,5 +291,67 @@ def orderRoom():
         }
     return json.dumps(res, ensure_ascii=False)
 
+
+# 预约记录列表
+@server.route('/meetingRoom/orderlist', methods=['post'])
+def orderlist():
+    content = flask.request.json
+    print(content, 'content') # {'meetingRoomName': '', 'meetingRoomBuildingNum': '00', 'state': '00', 'orderTime': '2022-05-20', 'size': 10, 'page': 1}
+    meetingRoomName = flask.request.json.get('meetingRoomName')
+    meetingRoomBuildingNum = flask.request.json.get('meetingRoomBuildingNum')
+    orderTime = flask.request.json.get('orderTime')
+    size = flask.request.json.get('size')
+    page = flask.request.json.get('page')
+
+    # sqlList语句
+    sqlList = "select * from orderlist where meetingRoomName like" + "'%" + str(meetingRoomName) + "%'" # 模糊查询meetingRoomName
+    
+
+    # 条件查询（楼栋选择）
+    if meetingRoomBuildingNum != '00': # meetingRoomBuildingNum不是全部
+      sqlList = sqlList + "and meetingRoomBuildingNum=" + "'" + str(meetingRoomBuildingNum) + "'"
+    if orderTime: # 选择了具体时间
+      sqlList = sqlList + "and orderTime=" + "'" + str(orderTime) + "'" # 预约时间查询
+
+    print(sqlList, 'sqlList')
+    # 数据库的值
+    meetingRoomList = MsqldbObject(sqlList)
+    # print(meetingRoomList, 'meetingRoomList')
+    # print(len(meetingRoomList), 'meetingRoomList')
+    # paginator.count：返回所有记录的总数量
+    # paginator.num_pages：返回分页后的总页数
+    # paginator.page_range：返回分页后的页码范围，一个range对象
+    paginator = Paginator(meetingRoomList, size)
+    current_page_num = int(page)
+    page_obj = paginator.page(current_page_num)
+    currentList = page_obj.object_list
+    # print(currentList, 'currentList')
+    # print(type(currentList), 'type') # list
+    if len(meetingRoomList) >= 0: # 查到了信息
+      res = {
+        'code': 200,
+        'data': {
+          'code': '0000',
+          'message': 'success',
+          'data': {
+            'page': page,
+            'size': size,
+            'list': currentList,
+            'total': paginator.count,
+            'totalPages': paginator.num_pages
+          }
+        }
+      }
+    else:
+      res = {
+        'code': '9999',
+        'message': '获取会议室预约记录失败',
+        'data': {
+          'list': [],
+        }
+      }
+    return json.dumps(res, ensure_ascii=False)
+
+
 # 本地服务端口号
 server.run(port=9090,debug=True,host='localhost')
